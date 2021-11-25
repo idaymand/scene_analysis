@@ -25,6 +25,7 @@ NUM_SHIFTS_X = 13
 NUM_MODELS = 19
 
 
+
 def norm1d(x):
     return x / np.linalg.norm(x)
 
@@ -127,7 +128,8 @@ def interpret_angels(hv_normed):
     return {'yaw': yaw, 'pitch': pitch, 'roll': roll, 'elevation': elevation}
 
 
-def angles_from_model(v: View):
+def angles_from_model(v: View, model_file_name):
+    model = init_model(model_file_name)
     return angles_from_model_(v, model)
 
 
@@ -145,19 +147,20 @@ def angles_from_model_(v: View, angle_model):
 
 # model1 = tf.keras.models.load_model(r'C:\Python\raven\event_parser\detectors\weights\7angles.h5')
 
+def init_model(model_file_name):
+    inputs = Input(shape=(NUM_FEATURES_ALL,), name='box_features')
+    x1 = layers.Dense(3600, activation='relu', name='dense_1')(inputs)
+    outputs = (layers.Dense(NUM_MODELS, name='model')(x1),
+               layers.Dense(NUM_ANGLES_X, name='yaw')(x1),
+               layers.Dense(NUM_ANGLES_Y, name='pitch')(x1),
+               layers.Dense(NUM_ANGLES_Z, name='roll')(x1),
+               layers.Dense(NUM_SHIFTS_X, name='translation')(x1),
+               layers.Dense(NUM_SHIFTS_Y, name='elevation')(x1),
+               layers.Dense(NUM_SHIFTS_Z, name='distance')(x1))
 
-inputs = Input(shape=(NUM_FEATURES_ALL,), name='box_features')
-x1 = layers.Dense(3600, activation='relu', name='dense_1')(inputs)
-outputs = (layers.Dense(NUM_MODELS, name='model')(x1),
-           layers.Dense(NUM_ANGLES_X, name='yaw')(x1),
-           layers.Dense(NUM_ANGLES_Y, name='pitch')(x1),
-           layers.Dense(NUM_ANGLES_Z, name='roll')(x1),
-           layers.Dense(NUM_SHIFTS_X, name='translation')(x1),
-           layers.Dense(NUM_SHIFTS_Y, name='elevation')(x1),
-           layers.Dense(NUM_SHIFTS_Z, name='distance')(x1))
+    model = Model(inputs=inputs, outputs=outputs)
 
-model = Model(inputs=inputs, outputs=outputs)
-
-model.load_weights(r'/Users/innadaymand/PycharmProjects/sceneAnalysis/model/7angles.h5')
+    model.load_weights(model_file_name)
+    return model
 
 # the boxes could be read directly into the v.data

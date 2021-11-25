@@ -12,7 +12,7 @@ from detectable_object import DetectionMap, DetectionContainer, DetectionHistMap
 
 
 class AIScanMetadata:
-    def __init__(self, configurator, detections=None, i_width=None, i_height=None):
+    def __init__(self, configurator, model_file_name, detections=None, i_width=None, i_height=None):
         self.index_output = [5, 4, 6, 1, 0, 2, 3]
         self.detections = detections
         self.GENERAL_IMAGE_SIDE = 300
@@ -26,6 +26,7 @@ class AIScanMetadata:
         for index in range(len(self.index_output)):
             self.angleDist.append([])
         self.distributions = []
+        self.model_file_name = model_file_name
 
     def process_part_detector_model(self):
         pass
@@ -41,7 +42,7 @@ class AIScanMetadata:
         score = v.data['car'][0]['Score']
         view_type = 'exterior'
         container = DetectionContainer(PARTS['CAR'], car_box, score, view_type, self.configurator.file_name)
-        v, distributions = angles_from_model(v)
+        v, distributions = angles_from_model(v, self.model_file_name)
         self.distributions = []
         self.params['exterior'] = {}
         for index in range(len(self.index_output)):
@@ -52,7 +53,7 @@ class AIScanMetadata:
             self.setAngle(self.distributions[index], index, np.array(weights), view_type)
         container.register_angle(self.angleDist)
         best_scene, scenes = container.get_top_n_scene_candidates_only_angle(n)
-        print(scenes)
+        return best_scene, scenes
 
     def process_parts_from_file(self, input_file_name, path_to_image, path_to_csv):
         if os.path.isfile(os.path.join(path_to_image, input_file_name.replace('.csv', ''))):
